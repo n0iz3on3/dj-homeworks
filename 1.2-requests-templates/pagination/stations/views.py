@@ -1,14 +1,15 @@
 from django.core.paginator import Paginator
 from django.shortcuts import render, redirect
 from django.urls import reverse
-from pagination.settings import BUS_STATION_CSV
+from django.conf import settings
+
 import csv
 
 def index(request):
     return redirect(reverse('bus_stations'))
 
 
-with open(BUS_STATION_CSV, newline='', encoding='utf-8') as csv_file:
+with open(settings.BUS_STATION_CSV, newline='', encoding='utf-8') as csv_file:
         reader = csv.DictReader(csv_file)
         data = [row for row in reader]
 
