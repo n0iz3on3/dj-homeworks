@@ -19,16 +19,6 @@ DATA = {
     # можете добавить свои рецепты ;)
 }
 
-# Напишите ваш обработчик. Используйте DATA как источник данных
-# Результат - render(request, 'calculator/index.html', context)
-# В качестве контекста должен быть передан словарь с рецептом:
-# context = {
-#   'recipe': {
-#     'ингредиент1': количество1,
-#     'ингредиент2': количество2,
-#   }
-# }
-
 def home(request):
     template_name = 'calculator/home.html'
     pages = {
@@ -46,9 +36,9 @@ def omlet(request):
     servings = int(request.GET.get('servings', 1))
     context = {
       'recipe': {
-        'яйца, шт': 2*servings,
-        'молоко, л': 0.1*servings,
-        'соль, ч.л.': 0.5*servings,
+        'яйца, шт': round(2*servings, 1),
+        'молоко, л': round(0.1*servings, 1),
+        'соль, ч.л.': round(0.5*servings, 1),
         },
     }
     return render(request, 'calculator/index.html', context)
@@ -57,8 +47,8 @@ def pasta(request):
     servings = int(request.GET.get('servings', 1))
     context = {
       'recipe': {
-        'макароны, г': 0.3*servings,
-        'сыр, г': 0.05*servings,
+        'макароны, г': round(0.3*servings, 1),
+        'сыр, г': round(0.05*servings, 1),
         },
     }
     return render(request, 'calculator/index.html', context)
@@ -67,10 +57,10 @@ def buter(request):
     servings = int(request.GET.get('servings', 1))
     context = {
       'recipe': {
-        'хлеб, ломтик': 1*servings,
-        'колбаса, ломтик': 1*servings,
-        'сыр, ломтик': 1*servings,
-        'помидор, ломтик': 1*servings,
+        'хлеб, ломтик': round(1*servings, 1),
+        'колбаса, ломтик': round(1*servings, 1),
+        'сыр, ломтик': round(1*servings, 1),
+        'помидор, ломтик': round(1*servings, 1),
         },
     }
     return render(request, 'calculator/index.html', context)
