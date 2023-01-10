@@ -13,22 +13,16 @@ def books_view(request):
 
 def book_scope(request, pub_date):
     template = 'books/book.html'
-    sorted_books_objects = Book.objects.all().order_by('pub_date')
-    paginator = Paginator(sorted_books_objects, 1)
-    context = {}
+    books = Book.objects.filter(pub_date=pub_date)
+    next_date = Book.objects.filter(pub_date__gt=pub_date).order_by('pub_date').first()
+    prev_date = Book.objects.filter(pub_date__lt=pub_date).order_by('-pub_date').first()
 
-    for page, book in enumerate(sorted_books_objects, 1):
-        if pub_date == book.pub_date:
-            page_by_date = paginator.page(page)
+    context = {'books': books}
 
-            if page_by_date.has_previous():
-                prev_page_by_date = paginator.page(page_by_date.previous_page_number()).object_list[0].pub_date
-                context['prev_page'] = prev_page_by_date
+    if next_date:
+        context['next_page'] = next_date.pub_date
 
-            if page_by_date.has_next():
-                next_page_by_date = paginator.page(page_by_date.next_page_number()).object_list[0].pub_date
-                context['next_page'] = next_page_by_date
-
-            context['book'] = book
+    if prev_date:
+        context['prev_page'] = prev_date.pub_date
 
     return render(request, template, context)
