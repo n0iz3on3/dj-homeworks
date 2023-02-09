@@ -40,18 +40,22 @@ class AdvertisementViewSet(ModelViewSet):
             serializer = AdvertisementSerializer(queryset, many=True)
         return Response(serializer.data)
 
-    def get_queryset(self):
-        if self.action == 'favourites':
-            if self.request.user.is_anonymous:
-                return Advertisement.objects.none()
-            return self.request.favourite.favourites.all()
-        return super().get_queryset()
+    # def get_queryset(self):
+    #     if self.action == 'favourites':
+    #         if self.request.user.is_anonymous:
+    #             return Advertisement.objects.none()
+    #         return self.request.user.favourites.all()
+    #     return super().get_queryset()
 
     @action(detail=False, methods=['GET'])
     def favourites(self, request, *args, **kwargs):
-        ads = Advertisement.objects.filter(favourites__user=self.request.user)
-        serializer = AdvertisementSerializer(ads, many=True)
-        return Response(serializer.data)
+        # return self.list(request, *args, **kwargs)
+        try:
+            ads = Advertisement.objects.filter(favourites__user=self.request.user)
+            serializer = AdvertisementSerializer(ads, many=True)
+            return Response(serializer.data)
+        except TypeError:
+            return Response(status=status.HTTP_401_UNAUTHORIZED)
 
     @action(detail=True, methods=['POST'], url_path='add-to-favourite')
     def add_to_favourite(self, request, *args, **kwargs):
