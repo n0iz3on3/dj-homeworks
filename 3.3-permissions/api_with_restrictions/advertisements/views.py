@@ -57,8 +57,13 @@ class AdvertisementViewSet(ModelViewSet):
     def add_to_favourite(self, request, *args, **kwargs):
         ads = self.get_object()
         user = request.user
-        favourite, created = Favourite.objects.get_or_create(user=user, advertisement=ads)
-        return Response(status=status.HTTP_201_CREATED)
+        if user == ads.creator:
+            return Response({'detail': "you can't add your own listing to favorites"})
+        try:
+            favourite, created = Favourite.objects.get_or_create(user=user, advertisement=ads)
+            return Response(status=status.HTTP_201_CREATED)
+        except TypeError:
+            return Response({'detail': 'register to add to favorites'})
 
     @action(detail=True, methods=['DELETE'], url_path='remove-from-favourite')
     def remove_from_favourite(self, request, *args, **kwargs):
