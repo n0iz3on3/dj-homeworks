@@ -1,9 +1,10 @@
-import pytest
-from rest_framework.status import HTTP_200_OK, HTTP_201_CREATED, HTTP_204_NO_CONTENT
-from rest_framework.test import APIClient
-from django.urls import reverse
-from model_bakery import baker
 from random import choice
+
+import pytest
+from model_bakery import baker
+from django.urls import reverse
+from rest_framework.status import HTTP_200_OK, HTTP_201_CREATED, HTTP_204_NO_CONTENT, HTTP_400_BAD_REQUEST
+from rest_framework.test import APIClient
 
 from students.models import Course, Student
 
@@ -25,6 +26,12 @@ def student_factory():
     def factory(*args, **kwargs):
         return baker.make(Student, *args, **kwargs)
     return factory
+
+
+@pytest.fixture
+def test_with_specific_settings(settings):
+    settings.MAX_STUDENTS_PER_COURSE = 3
+    assert settings.MAX_STUDENTS_PER_COURSE
 
 
 @pytest.mark.django_db
@@ -84,9 +91,8 @@ def test_filter_courses_by_name(client, course_factory):
 def test_create_course(client):
     count = Course.objects.count()
     new_course = 'Kind, kind, python'
-    params = {'name': new_course}
     url = reverse('courses-list')
-    response = client.post(url, data=params)
+    response = client.post(url, data={'name': new_course})
     data = response.json()
     assert response.status_code == HTTP_201_CREATED
     assert Course.objects.count() == count + 1
@@ -98,9 +104,8 @@ def test_update_course_name(client, course_factory):
     course = course_factory(_quantity=1)
     course_id = course[0].id
     new_name = 'Python generation'
-    params = {'name': new_name}
     url = reverse('courses-detail', args=[course_id])
-    response = client.patch(url, data=params)
+    response = client.patch(url, data={'name': new_name})
     data = response.json()
     assert response.status_code == HTTP_200_OK
     assert data['id'] == course_id
@@ -108,24 +113,38 @@ def test_update_course_name(client, course_factory):
 
 
 @pytest.mark.django_db
-def test_update_course_student(client, course_factory, student_factory):
+def test_remove_course(client, course_factory):
+    course = course_factory(_quantity=1)
+    course_id = course[0].id
+    url = reverse('courses-detail', args=[course_id])
+    response = client.delete(url)
+    count = Course.objects.filter(id=course_id)
+    assert response.status_code == HTTP_204_NO_CONTENT
+    assert len(count) == 0
+
+
+@pytest.mark.django_db
+def test_add_student_to_course(client, course_factory, student_factory):
     course = course_factory(_quantity=1)
     student = student_factory(_quantity=1)
-    # count_students_on_course = len(course['students'])
+    url = reverse('stocks-list')
+    course_student_response = client.post(url, data={'course': course[0].id, 'student': student[0].id})
+    data = course_student_response.json()
+    assert course_student_response.status_code == HTTP_201_CREATED
+    assert data['student'] == student[0].id
+    assert data['course'] == course[0].id
+
+
+@pytest.mark.parametrize('students_count', [1, 2, 3, 5])
+@pytest.mark.django_db
+def test_course_student_limit(client, course_factory, student_factory, students_count, test_with_specific_settings):
+    course = course_factory(_quantity=1)
+    students = student_factory(_quantity=students_count)
     course_id = course[0].id
-    course_name = course[0].name
-    student_id = student[0].id
-    params = {'students': [student_id]}
-    url = reverse('courses-detail', args=[course_id])
-    response = client.patch(url, data=params)
-    assert response.status_code == HTTP_200_OK
-    # assert len(course['students']) == count_students_on_course + 1
-
-
-# @pytest.mark.django_db
-# def test_get_students(client, course_factory):
-#     students = student_factory(_quantity=15)
-#     response = client.get('/api/v1/courses/')
-#     assert response.status_code == 200
-#     data = response.json()
-#     assert len(data) == len(students)
+    url = reverse('stocks-list')
+    for student in students:
+        course_student_response = client.post(url, data={'course': course_id, 'student': student.id})
+        if students.index(student) <= 3:
+            assert course_student_response.status_code == HTTP_201_CREATED
+        else:
+            assert course_student_response.status_code == HTTP_400_BAD_REQUEST

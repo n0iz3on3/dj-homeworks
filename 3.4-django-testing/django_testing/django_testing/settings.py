@@ -41,7 +41,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'django_filters',
 
-    'students',
+    'students.apps.StudentsConfig',
 ]
 
 MIDDLEWARE = [
@@ -131,3 +131,5 @@ STATIC_URL = '/static/'
 REST_FRAMEWORK = {
     'TEST_REQUEST_DEFAULT_FORMAT': 'json',
 }
+
+MAX_STUDENTS_PER_COURSE = 20
